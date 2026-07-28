@@ -1,1 +1,549 @@
-test
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Cyber Labyrinth - Game Labirin</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body {
+            background-color: #0d0f17;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Header & Logo */
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            background: linear-gradient(45deg, #00f2fe, #4facfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            text-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .logo-icon {
+            width: 30px;
+            height: 30px;
+            border: 3px solid #00f2fe;
+            border-radius: 6px;
+            box-shadow: 0 0 10px #00f2fe;
+            position: relative;
+        }
+        .logo-icon::after {
+            content: '';
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #ff007f;
+            border-radius: 50%;
+            top: 7px;
+            left: 7px;
+            box-shadow: 0 0 8px #ff007f;
+        }
+
+        /* Panel Info Game */
+        .info-panel {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .info-box {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+        .info-box span {
+            color: #00f2fe;
+        }
+
+        /* Canvas Game */
+        #game-container {
+            position: relative;
+            border-radius: 12px;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 242, 254, 0.2);
+            overflow: hidden;
+            border: 2px solid rgba(0, 242, 254, 0.3);
+        }
+        canvas {
+            display: block;
+            background: #121522;
+        }
+
+        /* Controls & Controls Info */
+        .controls-area {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 400px;
+            margin-top: 15px;
+            padding: 0 10px;
+        }
+        
+        .how-to-play {
+            font-size: 0.75rem;
+            color: #a0a5c0;
+            max-width: 200px;
+            line-height: 1.3;
+        }
+        .how-to-play b {
+            color: #fff;
+        }
+
+        /* Virtual Joystick */
+        #joystick-container {
+            width: 90px;
+            height: 90px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            position: relative;
+            touch-action: none;
+        }
+        #joystick-knob {
+            width: 36px;
+            height: 36px;
+            background: radial-gradient(circle, #00f2fe, #4facfe);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px #00f2fe;
+            pointer-events: none;
+        }
+
+        /* Audio Toggle Button */
+        .btn-audio {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: 0.2s;
+        }
+        .btn-audio:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Overlay Game Over / Win */
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(13, 15, 23, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        #overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #overlay h2 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            color: #ff007f;
+            text-shadow: 0 0 10px #ff007f;
+        }
+        #overlay p {
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            color: #ccc;
+        }
+        #overlay button {
+            padding: 10px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #0d0f17;
+            background: #00f2fe;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 0 12px #00f2fe;
+            transition: transform 0.2s;
+        }
+        #overlay button:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header & Logo -->
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon"></div>
+            Cyber Labyrinth
+        </div>
+    </div>
+
+    <!-- Info Panel (Skor & Level) -->
+    <div class="info-panel">
+        <div class="info-box">Level: <span id="level-txt">1</span></div>
+        <div class="info-box">Skor: <span id="score-txt">0</span></div>
+        <button class="btn-audio" id="audio-btn" onclick="toggleAudio()">🔊 Musik: ON</button>
+    </div>
+
+    <!-- Container Game Canvas -->
+    <div id="game-container">
+        <canvas id="canvas" width="400" height="400"></canvas>
+        <div id="overlay">
+            <h2 id="overlay-title">GAME OVER</h2>
+            <p id="overlay-desc">Kamu kena rintangan!</p>
+            <button onclick="restartGame()">Coba Lagi</button>
+        </div>
+    </div>
+
+    <!-- Kontrol Game -->
+    <div class="controls-area">
+        <div class="how-to-play">
+            <b>Cara Bermain:</b><br>
+            • Desktop: Gunakan <b>Panah Keyboard / WASD</b>.<br>
+            • Mobile: Geser <b>Joystick</b>.<br>
+            • Capai <b>pintu hijau</b> untuk lanjut level! Hindari <b>musuh merah</b>.
+        </div>
+        <div id="joystick-container">
+            <div id="joystick-knob"></div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Elemen UI
+        const levelTxt = document.getElementById('level-txt');
+        const scoreTxt = document.getElementById('score-txt');
+        const overlay = document.getElementById('overlay');
+        const overlayTitle = document.getElementById('overlay-title');
+        const overlayDesc = document.getElementById('overlay-desc');
+        const audioBtn = document.getElementById('audio-btn');
+
+        // Audio System (Web Audio API - Synthesizer)
+        let audioCtx = null;
+        let isAudioMuted = false;
+        let bgmInterval = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                startBGM();
+            }
+        }
+
+        function playSound(freq, type, duration) {
+            if (isAudioMuted || !audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {}
+        }
+
+        function startBGM() {
+            const notes = [130.81, 146.83, 164.81, 174.61, 196.00]; // C3, D3, E3, F3, G3
+            let step = 0;
+            bgmInterval = setInterval(() => {
+                if (!isAudioMuted && audioCtx) {
+                    playSound(notes[step % notes.length], 'triangle', 0.2);
+                    step++;
+                }
+            }, 500);
+        }
+
+        function toggleAudio() {
+            initAudio();
+            isAudioMuted = !isAudioMuted;
+            audioBtn.innerText = isAudioMuted ? "🔇 Musik: OFF" : "🔊 Musik: ON";
+        }
+
+        // Variable Game
+        const gridCols = 10;
+        const gridRows = 10;
+        const cellSize = canvas.width / gridCols;
+
+        let level = 1;
+        let score = 0;
+        let isGameOver = false;
+
+        // Player
+        let player = { x: 0, y: 0 };
+        let goal = { x: gridCols - 1, y: gridRows - 1 };
+
+        // Labirin Map (0: Jalan, 1: Tembok)
+        let maze = [];
+        let enemies = [];
+
+        // Inisialisasi Labirin (Algoritma Sederhana + Random per Level)
+        function generateMaze() {
+            maze = Array.from({ length: gridRows }, () => Array(gridCols).fill(0));
+            
+            // Tambahkan dinding acak berdasarkan level
+            let wallCount = 15 + Math.min(level * 3, 35);
+            for (let i = 0; i < wallCount; i++) {
+                let rx = Math.floor(Math.random() * gridCols);
+                let ry = Math.floor(Math.random() * gridRows);
+                // Pastikan start dan goal tidak tertutup dinding
+                if ((rx !== 0 || ry !== 0) && (rx !== goal.x || ry !== goal.y)) {
+                    maze[ry][rx] = 1;
+                }
+            }
+
+            // Tambahkan Musuh (Rintangan Bergerak)
+            enemies = [];
+            let enemyCount = Math.min(Math.floor(level / 2), 5);
+            for (let i = 0; i < enemyCount; i++) {
+                let ex, ey;
+                do {
+                    ex = Math.floor(Math.random() * gridCols);
+                    ey = Math.floor(Math.random() * gridRows);
+                } while (maze[ey][ex] === 1 || (ex === 0 && ey === 0) || (ex === goal.x && ey === goal.y));
+
+                enemies.push({ x: ex, y: ey, dir: Math.random() < 0.5 ? 1 : -1, axis: Math.random() < 0.5 ? 'x' : 'y' });
+            }
+        }
+
+        // Render Game
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Background Grid Pattern
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+            for (let i = 0; i < canvas.width; i += cellSize) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height);
+                ctx.moveTo(0, i); ctx.lineTo(canvas.width, i);
+                ctx.stroke();
+            }
+
+            // Draw Labirin (Tembok)
+            for (let r = 0; r < gridRows; r++) {
+                for (let c = 0; c < gridCols; c++) {
+                    if (maze[r][c] === 1) {
+                        ctx.fillStyle = '#1e2538';
+                        ctx.fillRect(c * cellSize + 2, r * cellSize + 2, cellSize - 4, cellSize - 4);
+                        ctx.strokeStyle = '#2a3550';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(c * cellSize + 2, r * cellSize + 2, cellSize - 4, cellSize - 4);
+                    }
+                }
+            }
+
+            // Draw Goal (Pintu Keluar)
+            ctx.fillStyle = '#00ff88';
+            ctx.shadowColor = '#00ff88';
+            ctx.shadowBlur = 10;
+            ctx.fillRect(goal.x * cellSize + 8, goal.y * cellSize + 8, cellSize - 16, cellSize - 16);
+            ctx.shadowBlur = 0; // Reset Shadow
+
+            // Draw Musuh (Rintangan)
+            enemies.forEach(e => {
+                ctx.fillStyle = '#ff0055';
+                ctx.shadowColor = '#ff0055';
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc((e.x + 0.5) * cellSize, (e.y + 0.5) * cellSize, cellSize / 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+
+            // Draw Player
+            ctx.fillStyle = '#00f2fe';
+            ctx.shadowColor = '#00f2fe';
+            ctx.shadowBlur = 12;
+            ctx.beginPath();
+            ctx.arc((player.x + 0.5) * cellSize, (player.y + 0.5) * cellSize, cellSize / 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        // Pergerakan Player
+        function movePlayer(dx, dy) {
+            initAudio();
+            if (isGameOver) return;
+
+            let newX = player.x + dx;
+            let newY = player.y + dy;
+
+            // Cek Batas & Tembok
+            if (newX >= 0 && newX < gridCols && newY >= 0 && newY < gridRows) {
+                if (maze[newY][newX] !== 1) {
+                    player.x = newX;
+                    player.y = newY;
+                    playSound(400, 'sine', 0.05);
+                    checkState();
+                }
+            }
+        }
+
+        // Update Posisi Musuh (Rintangan Bergerak)
+        function updateEnemies() {
+            if (isGameOver) return;
+            enemies.forEach(e => {
+                let nextX = e.x;
+                let nextY = e.y;
+
+                if (e.axis === 'x') nextX += e.dir;
+                else nextY += e.dir;
+
+                // Pantulkan jika menabrak tembok atau batas
+                if (nextX < 0 || nextX >= gridCols || nextY < 0 || nextY >= gridRows || maze[nextY][nextX] === 1) {
+                    e.dir *= -1;
+                } else {
+                    e.x = nextX;
+                    e.y = nextY;
+                }
+            });
+            checkState();
+        }
+
+        // Cek Menang / Kalah
+        function checkState() {
+            // Cek Nabrak Musuh
+            enemies.forEach(e => {
+                if (e.x === player.x && e.y === player.y) {
+                    playSound(150, 'sawtooth', 0.4);
+                    endGame(false);
+                }
+            });
+
+            // Cek Sampai Goal
+            if (player.x === goal.x && player.y === goal.y) {
+                score += 100 + (level * 20);
+                level++;
+                scoreTxt.innerText = score;
+                levelTxt.innerText = level;
+                playSound(600, 'sine', 0.2);
+                initLevel();
+            }
+        }
+
+        function endGame(isWin) {
+            isGameOver = true;
+            overlay.classList.add('active');
+            if (!isWin) {
+                overlayTitle.innerText = "GAME OVER";
+                overlayTitle.style.color = "#ff0055";
+                overlayDesc.innerText = `Kamu terhenti di Level ${level}. Skor Akhir: ${score}`;
+            }
+        }
+
+        function restartGame() {
+            level = 1;
+            score = 0;
+            scoreTxt.innerText = score;
+            levelTxt.innerText = level;
+            isGameOver = false;
+            overlay.classList.remove('active');
+            initLevel();
+        }
+
+        function initLevel() {
+            player = { x: 0, y: 0 };
+            generateMaze();
+            draw();
+        }
+
+        // Controls Keyboard
+        window.addEventListener('keydown', (e) => {
+            switch (e.key) {
+                case 'ArrowUp': case 'w': case 'W': movePlayer(0, -1); break;
+                case 'ArrowDown': case 's': case 'S': movePlayer(0, 1); break;
+                case 'ArrowLeft': case 'a': case 'A': movePlayer(-1, 0); break;
+                case 'ArrowRight': case 'd': case 'D': movePlayer(1, 0); break;
+            }
+        });
+
+        // Controls Virtual Joystick
+        const joystick = document.getElementById('joystick-container');
+        const knob = document.getElementById('joystick-knob');
+        let joyActive = false;
+        let startX, startY;
+
+        joystick.addEventListener('pointerdown', (e) => {
+            joyActive = true;
+            startX = e.clientX;
+            startY = e.clientY;
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (!joyActive) return;
+            let dx = e.clientX - startX;
+            let dy = e.clientY - startY;
+            let dist = Math.min(Math.hypot(dx, dy), 30);
+            let angle = Math.atan2(dy, dx);
+
+            knob.style.transform = `translate(calc(-50% + ${Math.cos(angle) * dist}px), calc(-50% + ${Math.sin(angle) * dist}px))`;
+        });
+
+        window.addEventListener('pointerup', (e) => {
+            if (!joyActive) return;
+            joyActive = false;
+            knob.style.transform = `translate(-50%, -50%)`;
+
+            let dx = e.clientX - startX;
+            let dy = e.clientY - startY;
+
+            if (Math.hypot(dx, dy) > 15) {
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    movePlayer(dx > 0 ? 1 : -1, 0);
+                } else {
+                    movePlayer(0, dy > 0 ? 1 : -1);
+                }
+            }
+        });
+
+        // Loop Game
+        setInterval(() => {
+            updateEnemies();
+            draw();
+        }, 400);
+
+        // Start Game Pertama Kali
+        initLevel();
+    </script>
+</body>
+  </html>
+  
